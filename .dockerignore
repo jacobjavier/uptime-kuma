@@ -1,54 +1,43 @@
-/.idea
-/node_modules
-/data*
-/out
-/test
-/kubernetes
-/.do
-**/.dockerignore
-/private
-**/.git
-**/.gitignore
-**/docker-compose*
-**/[Dd]ockerfile*
-LICENSE
-README.md
-.editorconfig
-.vscode
-.eslint*
-.stylelint*
-/.github
-yarn.lock
-app.json
-CODE_OF_CONDUCT.md
-CONTRIBUTING.md
-CNAME
-install.sh
-SECURITY.md
-tsconfig.json
+# Git
+.git
+.gitignore
+
+# Dependencies
+node_modules
+
+# Data and logs
+data/
+*.log
+
+# Development files
 .env
-/tmp
-/ecosystem.config.js
-/extra/healthcheck.exe
-/extra/healthcheck
-/extra/exe-builder
-/extra/uptime-kuma-push
+.env.local
+.vscode
+.idea
 
-# Comment the following line if you want to rebuild the healthcheck binary
-/extra/healthcheck-armv7
+# Build files
+dist/
+*.tar.gz
 
+# Test files
+test/
+coverage/
+.nyc_output
 
-### .gitignore content (commented rules are duplicated)
+# Documentation
+*.md
+docs/
 
-#node_modules
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Fly.io specific
+fly.toml
+
+# macOS
 .DS_Store
-#dist
-dist-ssr
-*.local
-#.idea
 
-#/data
-#!/data/.gitkeep
-#.vscode
-
-### End of .gitignore content
+# Temporary files
+*.tmp
+*.temp

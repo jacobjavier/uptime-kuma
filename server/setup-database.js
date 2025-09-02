@@ -149,7 +149,7 @@ class SetupDatabase {
 
                 let dbConfig = request.body.dbConfig;
 
-                let supportedDBTypes = [ "mariadb", "sqlite" ];
+                let supportedDBTypes = [ "mariadb", "sqlite", "postgres" ];
 
                 if (this.isEnabledEmbeddedMariaDB()) {
                     supportedDBTypes.push("embedded-mariadb");
@@ -216,6 +216,58 @@ class SetupDatabase {
                         });
                         await connection.execute("SELECT 1");
                         connection.end();
+                    } catch (e) {
+                        response.status(400).json("Cannot connect to the database: " + e.message);
+                        this.runningSetup = false;
+                        return;
+                    }
+                }
+
+                // PostgreSQL
+                if (dbConfig.type === "postgres") {
+                    // Check if DATABASE_URL is provided
+                    if (!process.env.DATABASE_URL) {
+                        if (!dbConfig.hostname) {
+                            response.status(400).json("Hostname is required");
+                            this.runningSetup = false;
+                            return;
+                        }
+
+                        if (!dbConfig.port) {
+                            response.status(400).json("Port is required");
+                            this.runningSetup = false;
+                            return;
+                        }
+
+                        if (!dbConfig.dbName) {
+                            response.status(400).json("Database name is required");
+                            this.runningSetup = false;
+                            return;
+                        }
+
+                        if (!dbConfig.username) {
+                            response.status(400).json("Username is required");
+                            this.runningSetup = false;
+                            return;
+                        }
+
+                        if (!dbConfig.password) {
+                            response.status(400).json("Password is required");
+                            this.runningSetup = false;
+                            return;
+                        }
+                    }
+
+                    // Test connection
+                    try {
+                        const { Client } = require("pg");
+                        const client = new Client({
+                            connectionString: process.env.DATABASE_URL || `postgresql://${dbConfig.username}:${dbConfig.password}@${dbConfig.hostname}:${dbConfig.port}/${dbConfig.dbName}`,
+                            ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+                        });
+                        await client.connect();
+                        await client.query("SELECT 1");
+                        await client.end();
                     } catch (e) {
                         response.status(400).json("Cannot connect to the database: " + e.message);
                         this.runningSetup = false;

@@ -12,8 +12,8 @@
         <!-- Desktop header -->
         <header v-if="! $root.isMobile" class="d-flex flex-wrap justify-content-center py-3 mb-3 border-bottom">
             <router-link to="/dashboard" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
-                <object class="bi me-2 ms-4" width="40" height="40" data="/icon.svg" />
-                <span class="fs-4 title">{{ $t("Uptime Kuma") }}</span>
+                <img class="bi me-2 ms-4" width="40" height="40" :src="logoSrc" alt="iCentral Logo" />
+                <span class="fs-4 title">iCentral</span>
             </router-link>
 
             <a v-if="hasNewVersion" target="_blank" href="https://github.com/louislam/uptime-kuma/releases" class="btn btn-primary me-3">
@@ -84,8 +84,8 @@
         <!-- Mobile header -->
         <header v-else class="d-flex flex-wrap justify-content-center pt-2 pb-2 mb-3">
             <router-link to="/dashboard" class="d-flex align-items-center text-dark text-decoration-none">
-                <object class="bi" width="40" height="40" data="/icon.svg" />
-                <span class="fs-4 title ms-2">Uptime Kuma</span>
+                <img class="bi" width="40" height="40" :src="logoSrc" alt="iCentral Logo" />
+                <span class="fs-4 title ms-2">iCentral</span>
             </router-link>
         </header>
 
@@ -133,6 +133,9 @@
 import Login from "../components/Login.vue";
 import compareVersions from "compare-versions";
 import { useToast } from "vue-toastification";
+import logoTransparent from "../assets/logomark_transparant.png";
+import logoWhite from "../assets/logomark_white_transparant.png";
+
 const toast = useToast();
 
 export default {
@@ -165,6 +168,16 @@ export default {
             } else {
                 return false;
             }
+        },
+
+        // Seleccionar logo según el tema
+        logoSrc() {
+            // Si el tema es oscuro, usar el logo blanco
+            if (this.$root.theme === "dark") {
+                return logoWhite;
+            }
+            // Para tema claro o por defecto, usar el logo transparente
+            return logoTransparent;
         },
 
     },

@@ -1,5 +1,5 @@
 {
-    "name": "uptime-kuma",
+    "name": "icentral",
     "version": "2.0.0-beta.3",
     "license": "MIT",
     "repository": {
@@ -51,6 +51,8 @@
         "simple-mongo": "docker run --rm -p 27017:27017 mongo",
         "simple-postgres": "docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres",
         "simple-mariadb": "docker run --rm -p 3306:3306 -e MYSQL_ROOT_PASSWORD=mariadb# mariadb",
+        "setup-postgres": "node extra/setup-postgres.js",
+        "migrate-to-icentral": "node extra/migrate-to-icentral.js",
         "update-language-files": "cd extra/update-language-files && node index.js && cross-env-shell eslint ../../src/languages/$npm_config_language.js --fix",
         "release-final": "node ./extra/release/final.mjs",
         "release-beta": "node ./extra/release/beta.mjs",

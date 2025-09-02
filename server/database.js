@@ -310,6 +310,41 @@ class Database {
                 },
                 pool: mariadbPoolConfig,
             };
+        } else if (dbConfig.type === "postgres") {
+            if (!/^\w+$/.test(dbConfig.dbName)) {
+                throw Error("Invalid database name. A database name can only consist of letters, numbers and underscores");
+            }
+
+            // For PostgreSQL, we use DATABASE_URL if available
+            const databaseUrl = process.env.DATABASE_URL;
+            if (databaseUrl) {
+                config = {
+                    client: "pg",
+                    connection: databaseUrl,
+                    pool: {
+                        min: 0,
+                        max: 10,
+                        idleTimeoutMillis: 30000,
+                    },
+                };
+            } else {
+                config = {
+                    client: "pg",
+                    connection: {
+                        host: dbConfig.hostname,
+                        port: dbConfig.port,
+                        user: dbConfig.username,
+                        password: dbConfig.password,
+                        database: dbConfig.dbName,
+                        ssl: dbConfig.ssl || false,
+                    },
+                    pool: {
+                        min: 0,
+                        max: 10,
+                        idleTimeoutMillis: 30000,
+                    },
+                };
+            }
         } else {
             throw new Error("Unknown Database type: " + dbConfig.type);
         }
@@ -342,6 +377,8 @@ class Database {
             await this.initSQLite(testMode, noLog);
         } else if (dbConfig.type.endsWith("mariadb")) {
             await this.initMariaDB();
+        } else if (dbConfig.type === "postgres") {
+            await this.initPostgreSQL();
         }
     }
 
@@ -388,6 +425,22 @@ class Database {
             await createTables();
         } else {
             log.debug("db", "MariaDB database already exists");
+        }
+    }
+
+    /**
+     * Initialize PostgreSQL
+     * @returns {Promise<void>}
+     */
+    static async initPostgreSQL() {
+        log.debug("db", "Checking if PostgreSQL database exists...");
+
+        let hasTable = await R.hasTable("docker_host");
+        if (!hasTable) {
+            const { createTables } = require("../db/knex_init_db");
+            await createTables();
+        } else {
+            log.debug("db", "PostgreSQL database already exists");
         }
     }
 
@@ -736,6 +789,8 @@ class Database {
     static sqlHourOffset() {
         if (Database.dbConfig.type === "sqlite") {
             return "DATETIME('now', ? || ' hours')";
+        } else if (Database.dbConfig.type === "postgres") {
+            return "CURRENT_TIMESTAMP + INTERVAL '1 hour' * ?";
         } else {
             return "DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? HOUR)";
         }

@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: icentral-postgres
+    environment:
+      POSTGRES_USER: icentral
+      POSTGRES_PASSWORD: icentral_password
+      POSTGRES_DB: icentral_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - icentral-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U icentral"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  icentral:
+    build:
+      context: .
+      dockerfile: Dockerfile.fly
+    container_name: icentral-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://icentral:icentral_password@postgres:5432/icentral_db
+      UPTIME_KUMA_DB_TYPE: postgres
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./data:/app/data
+      - ./src:/app/src
+      - ./server:/app/server
+    networks:
+      - icentral-network
+    command: ["npm", "run", "dev"]
+
+volumes:
+  postgres_data:
+
+networks:
+  icentral-network:
+    driver: bridge

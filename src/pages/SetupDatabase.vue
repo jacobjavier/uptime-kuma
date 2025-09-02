@@ -4,7 +4,7 @@
             <div>
                 <object width="64" height="64" data="/icon.svg" />
                 <div style="font-size: 28px; font-weight: bold; margin-top: 5px;">
-                    Uptime Kuma
+                    iCentral
                 </div>
             </div>
 
@@ -47,6 +47,11 @@
                         MariaDB/MySQL
                     </label>
 
+                    <input id="btnradio4" v-model="dbConfig.type" type="radio" class="btn-check" autocomplete="off" value="postgres">
+                    <label class="btn btn-outline-primary" for="btnradio4">
+                        PostgreSQL
+                    </label>
+
                     <input id="btnradio1" v-model="dbConfig.type" type="radio" class="btn-check" autocomplete="off" value="sqlite">
                     <label class="btn btn-outline-primary" for="btnradio1">
                         SQLite
@@ -65,7 +70,12 @@
                     {{ $t("setupDatabaseSQLite") }}
                 </div>
 
-                <template v-if="dbConfig.type === 'mariadb'">
+                <div v-if="dbConfig.type === 'postgres'" class="mt-3 short">
+                    <p>Configure PostgreSQL para iCentral.</p>
+                    <p class="small text-muted">Si está usando Fly.io, puede usar DATABASE_URL automáticamente.</p>
+                </div>
+
+                <template v-if="dbConfig.type === 'mariadb' || dbConfig.type === 'postgres'">
                     <div class="form-floating mt-3 short">
                         <input id="floatingInput" v-model="dbConfig.hostname" type="text" class="form-control" required>
                         <label for="floatingInput">{{ $t("Hostname") }}</label>
@@ -129,6 +139,15 @@ export default {
         disabledButton() {
             return this.dbConfig.type === undefined || this.info.runningSetup;
         },
+    },
+    watch: {
+        "dbConfig.type"(newType) {
+            if (newType === "postgres") {
+                this.dbConfig.port = 5432;
+            } else if (newType === "mariadb") {
+                this.dbConfig.port = 3306;
+            }
+        }
     },
     async mounted() {
         let res = await axios.get("/setup-database-info");
