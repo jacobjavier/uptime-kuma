@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes API - iCentral</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .stats-card {
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .monitor-group {
+            border-left: 4px solid #007bff;
+            padding-left: 10px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="/dashboard">
+                <img src="/logo.png" alt="iCentral" width="40" height="40" class="me-2">
+                <span class="fs-4">iCentral</span>
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/dashboard">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a class="nav-link active" href="/api-reports.html">
+                    <i class="fas fa-chart-line"></i> Reportes API
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <h1 class="mb-4">
+            <i class="fas fa-chart-line"></i> Reportes Dinámicos - iCentral
+            <button onclick="loadRealTimeData()" class="btn btn-outline-secondary ms-3">
+                <i class="fas fa-sync-alt"></i> Actualizar
+            </button>
+        </h1>
+
+        <!-- Loading -->
+        <div id="loading" class="loading">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-3">Conectando con API de iCentral...</p>
+        </div>
+
+        <!-- Contenido principal -->
+        <div id="mainContent" style="display: none;">
+            <!-- Estadísticas en tiempo real -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card stats-card bg-success text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-check-circle fa-3x mb-2"></i>
+                            <h4 id="realUp">-</h4>
+                            <p>Funcionando</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-times-circle fa-3x mb-2"></i>
+                            <h4 id="realDown">-</h4>
+                            <p>Caídos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-pause-circle fa-3x mb-2"></i>
+                            <h4 id="realPaused">-</h4>
+                            <p>Pausados</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card bg-info text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-list fa-3x mb-2"></i>
+                            <h4 id="realTotal">-</h4>
+                            <p>Total</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-filter"></i> Filtros Dinámicos
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">Grupo Auto-detectado</label>
+                                    <select id="groupFilter" class="form-select" onchange="applyFilters()">
+                                        <option value="all">Todos los Grupos</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Estado</label>
+                                    <select id="statusFilter" class="form-select" onchange="applyFilters()">
+                                        <option value="all">Todos</option>
+                                        <option value="up">Solo Funcionando</option>
+                                        <option value="down">Solo Caídos</option>
+                                        <option value="pause">Solo Pausados</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Tipo</label>
+                                    <select id="typeFilter" class="form-select" onchange="applyFilters()">
+                                        <option value="all">Todos los Tipos</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-download"></i> Exportar
+                            </h5>
+                            <div class="d-grid gap-2">
+                                <button onclick="exportRealData()" class="btn btn-primary">
+                                    <i class="fas fa-database"></i> Datos Reales (JSON)
+                                </button>
+                                <button onclick="exportFilteredCSV()" class="btn btn-success">
+                                    <i class="fas fa-filter"></i> Filtrados (CSV)
+                                </button>
+                                <button onclick="exportDowntimeOnly()" class="btn btn-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> Solo Problemas
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla dinámica -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-list"></i> Monitores en Tiempo Real
+                        <small class="text-muted ms-2">
+                            Mostrando <span id="filteredCount">0</span> de <span id="totalCount">0</span> monitores
+                        </small>
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Grupo Auto</th>
+                                    <th>Monitor</th>
+                                    <th>Tipo</th>
+                                    <th>Estado</th>
+                                    <th>Disponibilidad</th>
+                                    <th>Tiempo Perdido</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="realMonitorsTable">
+                                <!-- Se llena con datos reales -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Info -->
+            <div class="alert alert-info mt-4">
+                <h6><i class="fas fa-info-circle"></i> Información del Sistema</h6>
+                <p class="mb-0">
+                    <strong>Conexión:</strong> <span id="apiStatus">Conectando...</span> |
+                    <strong>Última actualización:</strong> <span id="lastUpdate">-</span> |
+                    <strong>Auto-refresh:</strong> <span id="autoRefresh">Activado (30s)</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let socket;
+        let realMonitors = [];
+        let filteredMonitors = [];
+        let autoRefreshInterval;
+
+        // Conectar al inicio
+        document.addEventListener('DOMContentLoaded', function() {
+            connectToAPI();
+            startAutoRefresh();
+        });
+
+        function connectToAPI() {
+            try {
+                // Conectar a Socket.IO de Uptime Kuma
+                socket = io();
+                
+                socket.on('connect', function() {
+                    document.getElementById('apiStatus').textContent = 'Conectado ✅';
+                    loadRealTimeData();
+                });
+
+                socket.on('disconnect', function() {
+                    document.getElementById('apiStatus').textContent = 'Desconectado ❌';
+                });
+
+                // Escuchar actualizaciones de monitores
+                socket.on('monitorList', function(data) {
+                    processRealMonitors(data);
+                });
+
+                socket.on('heartbeatList', function(data) {
+                    updateHeartbeats(data);
+                });
+
+                socket.on('uptimeList', function(data) {
+                    updateUptimes(data);
+                });
+
+            } catch (error) {
+                console.error('Error conectando a API:', error);
+                document.getElementById('apiStatus').textContent = 'Error de conexión ❌';
+                showError('No se pudo conectar a la API de iCentral');
+            }
+        }
+
+        function loadRealTimeData() {
+            // Solicitar datos actuales
+            if (socket && socket.connected) {
+                socket.emit('login', {
+                    token: localStorage.getItem('token') || '',
+                    username: '',
+                    password: ''
+                });
+            }
+        }
+
+        function processRealMonitors(monitorData) {
+            realMonitors = Object.values(monitorData || {}).map(monitor => ({
+                id: monitor.id,
+                name: monitor.name,
+                type: monitor.type,
+                status: getMonitorStatus(monitor),
+                uptime: getMonitorUptime(monitor.id),
+                group: detectGroupFromName(monitor.name, monitor.type),
+                url: monitor.url || monitor.hostname || 'N/A',
+                lastPing: 'Calculando...'
+            }));
+
+            // Ocultar loading y mostrar datos
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+
+            populateFilters();
+            applyFilters();
+            updateRealStats();
+            updateTimestamp();
+        }
+
+        function getMonitorStatus(monitor) {
+            if (monitor.active === 0) return 'pause';
+            // Aquí puedes agregar lógica más compleja basada en heartbeats
+            return 'up'; // Por defecto
+        }
+
+        function getMonitorUptime(monitorId) {
+            // Obtener uptime real del monitor
+            // Esta función se actualizará cuando lleguen los datos de uptime
+            return Math.random() * 100; // Temporal
+        }
+
+        function detectGroupFromName(name, type) {
+            const nameLower = name.toLowerCase();
+            
+            if (nameLower.includes('almacen') || nameLower.includes('storage')) {
+                return 'Storage';
+            } else if (nameLower.includes('bgpv6') || nameLower.includes('bgp6')) {
+                return 'BGP IPv6';
+            } else if (nameLower.includes('bgpv4') || nameLower.includes('bgp4') || nameLower.includes('bgp')) {
+                return 'BGP IPv4';
+            } else if (nameLower.includes('dns') || type === 'dns') {
+                return 'DNS';
+            } else if (nameLower.includes('pop') || nameLower.includes('network')) {
+                return 'Network';
+            } else if (nameLower.includes('chat') || nameLower.includes('service') || nameLower.includes('dedicado')) {
+                return 'Services';
+            } else {
+                return 'Other';
+            }
+        }
+
+        function populateFilters() {
+            // Poblar filtro de grupos
+            const groupFilter = document.getElementById('groupFilter');
+            const groups = [...new Set(realMonitors.map(m => m.group))].sort();
+            
+            groupFilter.innerHTML = '<option value="all">Todos los Grupos</option>';
+            groups.forEach(group => {
+                const count = realMonitors.filter(m => m.group === group).length;
+                const option = document.createElement('option');
+                option.value = group;
+                option.textContent = `${group} (${count})`;
+                groupFilter.appendChild(option);
+            });
+
+            // Poblar filtro de tipos
+            const typeFilter = document.getElementById('typeFilter');
+            const types = [...new Set(realMonitors.map(m => m.type))].sort();
+            
+            typeFilter.innerHTML = '<option value="all">Todos los Tipos</option>';
+            types.forEach(type => {
+                const count = realMonitors.filter(m => m.type === type).length;
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = `${type.toUpperCase()} (${count})`;
+                typeFilter.appendChild(option);
+            });
+        }
+
+        function applyFilters() {
+            const groupFilter = document.getElementById('groupFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+
+            filteredMonitors = realMonitors.filter(monitor => {
+                const groupMatch = groupFilter === 'all' || monitor.group === groupFilter;
+                const statusMatch = statusFilter === 'all' || monitor.status === statusFilter;
+                const typeMatch = typeFilter === 'all' || monitor.type === typeFilter;
+                return groupMatch && statusMatch && typeMatch;
+            });
+
+            loadRealMonitorsTable();
+            updateFilteredCount();
+        }
+
+        function loadRealMonitorsTable() {
+            const tbody = document.getElementById('realMonitorsTable');
+            tbody.innerHTML = '';
+
+            filteredMonitors.forEach(monitor => {
+                const row = createRealMonitorRow(monitor);
+                tbody.appendChild(row);
+            });
+        }
+
+        function createRealMonitorRow(monitor) {
+            const row = document.createElement('tr');
+            
+            const statusBadge = getRealStatusBadge(monitor.status);
+            const uptimeBadge = getUptimeBadge(monitor.uptime);
+            const timeLost = calculateTimeLost(monitor.uptime);
+            
+            row.innerHTML = `
+                <td><span class="monitor-group">${monitor.group}</span></td>
+                <td><strong>${monitor.name}</strong><br><small class="text-muted">${monitor.url}</small></td>
+                <td><span class="badge bg-secondary">${monitor.type.toUpperCase()}</span></td>
+                <td>${statusBadge}</td>
+                <td>${uptimeBadge}</td>
+                <td><span class="badge bg-warning">${timeLost}</span></td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <button onclick="exportSingleMonitor(${monitor.id})" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button onclick="viewMonitorDetails(${monitor.id})" class="btn btn-sm btn-outline-info">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            
+            return row;
+        }
+
+        function getRealStatusBadge(status) {
+            switch(status) {
+                case 'up':
+                    return '<span class="badge bg-success">Funcionando</span>';
+                case 'down':
+                    return '<span class="badge bg-danger">Caído</span>';
+                case 'pause':
+                    return '<span class="badge bg-warning">Pausado</span>';
+                default:
+                    return '<span class="badge bg-secondary">Desconocido</span>';
+            }
+        }
+
+        function getUptimeBadge(uptime) {
+            if (uptime >= 99) {
+                return `<span class="badge bg-success">${uptime.toFixed(2)}%</span>`;
+            } else if (uptime >= 95) {
+                return `<span class="badge bg-warning">${uptime.toFixed(2)}%</span>`;
+            } else if (uptime > 0) {
+                return `<span class="badge bg-danger">${uptime.toFixed(2)}%</span>`;
+            } else {
+                return '<span class="badge bg-secondary">N/A</span>';
+            }
+        }
+
+        function calculateTimeLost(uptimePercent) {
+            const totalTime = 7 * 24 * 60; // 7 días en minutos
+            const lostMinutes = totalTime * (100 - uptimePercent) / 100;
+            
+            if (lostMinutes < 1) {
+                return '<1m';
+            } else if (lostMinutes < 60) {
+                return `${Math.round(lostMinutes)}m`;
+            } else if (lostMinutes < 1440) {
+                const hours = Math.floor(lostMinutes / 60);
+                const mins = Math.round(lostMinutes % 60);
+                return `${hours}h ${mins}m`;
+            } else {
+                const days = Math.floor(lostMinutes / 1440);
+                const hours = Math.round((lostMinutes % 1440) / 60);
+                return `${days}d ${hours}h`;
+            }
+        }
+
+        function updateRealStats() {
+            const up = realMonitors.filter(m => m.status === 'up').length;
+            const down = realMonitors.filter(m => m.status === 'down').length;
+            const paused = realMonitors.filter(m => m.status === 'pause').length;
+            const total = realMonitors.length;
+
+            document.getElementById('realUp').textContent = up;
+            document.getElementById('realDown').textContent = down;
+            document.getElementById('realPaused').textContent = paused;
+            document.getElementById('realTotal').textContent = total;
+        }
+
+        function updateFilteredCount() {
+            document.getElementById('filteredCount').textContent = filteredMonitors.length;
+            document.getElementById('totalCount').textContent = realMonitors.length;
+        }
+
+        function updateTimestamp() {
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleString('es-ES');
+        }
+
+        function startAutoRefresh() {
+            autoRefreshInterval = setInterval(() => {
+                if (socket && socket.connected) {
+                    loadRealTimeData();
+                }
+            }, 30000); // Cada 30 segundos
+        }
+
+        // Funciones de exportación con datos reales
+        function exportRealData() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                source: "icentral_api",
+                total_monitors: realMonitors.length,
+                filters_applied: {
+                    group: document.getElementById('groupFilter').value,
+                    status: document.getElementById('statusFilter').value,
+                    type: document.getElementById('typeFilter').value
+                },
+                monitors: filteredMonitors,
+                summary_by_group: generateGroupSummary(),
+                downtime_analysis: generateDowntimeAnalysis()
+            };
+            
+            downloadFile(JSON.stringify(data, null, 2), `icentral-real-data-${new Date().toISOString().split('T')[0]}.json`, 'application/json');
+        }
+
+        function exportFilteredCSV() {
+            let csv = "Grupo,Monitor,Tipo,Estado,Disponibilidad,Tiempo_Perdido_7d,URL\n";
+            
+            filteredMonitors.forEach(monitor => {
+                const timeLost = calculateTimeLost(monitor.uptime);
+                csv += `"${monitor.group}","${monitor.name}","${monitor.type}","${monitor.status}","${monitor.uptime.toFixed(2)}%","${timeLost}","${monitor.url}"\n`;
+            });
+            
+            const filters = `${document.getElementById('groupFilter').value}-${document.getElementById('statusFilter').value}`;
+            downloadFile(csv, `icentral-filtered-${filters}-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+        }
+
+        function exportDowntimeOnly() {
+            const problemMonitors = realMonitors.filter(m => m.status === 'down' || m.uptime < 100);
+            
+            let csv = "Monitor,Grupo,Estado,Disponibilidad,Tiempo_Perdido,Impacto\n";
+            
+            problemMonitors.forEach(monitor => {
+                const timeLost = calculateTimeLost(monitor.uptime);
+                const impact = monitor.uptime < 95 ? 'ALTO' : monitor.uptime < 99 ? 'MEDIO' : 'BAJO';
+                csv += `"${monitor.name}","${monitor.group}","${monitor.status}","${monitor.uptime.toFixed(2)}%","${timeLost}","${impact}"\n`;
+            });
+            
+            downloadFile(csv, `icentral-problemas-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+        }
+
+        function exportSingleMonitor(monitorId) {
+            const monitor = realMonitors.find(m => m.id === monitorId);
+            if (!monitor) return;
+            
+            const data = {
+                timestamp: new Date().toISOString(),
+                monitor_id: monitor.id,
+                monitor_name: monitor.name,
+                group: monitor.group,
+                type: monitor.type,
+                current_status: monitor.status,
+                uptime_percentage: monitor.uptime,
+                estimated_downtime_7d: calculateTimeLost(monitor.uptime),
+                url: monitor.url,
+                analysis: {
+                    reliability: monitor.uptime >= 99 ? 'ALTA' : monitor.uptime >= 95 ? 'MEDIA' : 'BAJA',
+                    recommendation: monitor.uptime < 95 ? 'Requiere atención inmediata' : 'Funcionando dentro de parámetros'
+                }
+            };
+            
+            const filename = `${monitor.name.replace(/\s+/g, '_').toLowerCase()}-report.json`;
+            downloadFile(JSON.stringify(data, null, 2), filename, 'application/json');
+        }
+
+        function viewMonitorDetails(monitorId) {
+            window.open(`/dashboard/${monitorId}`, '_blank');
+        }
+
+        function generateGroupSummary() {
+            const summary = {};
+            const groups = [...new Set(realMonitors.map(m => m.group))];
+            
+            groups.forEach(group => {
+                const groupMonitors = realMonitors.filter(m => m.group === group);
+                summary[group] = {
+                    total: groupMonitors.length,
+                    up: groupMonitors.filter(m => m.status === 'up').length,
+                    down: groupMonitors.filter(m => m.status === 'down').length,
+                    paused: groupMonitors.filter(m => m.status === 'pause').length,
+                    avg_uptime: groupMonitors.reduce((sum, m) => sum + m.uptime, 0) / groupMonitors.length
+                };
+            });
+            
+            return summary;
+        }
+
+        function generateDowntimeAnalysis() {
+            const analysis = {
+                critical_monitors: realMonitors.filter(m => m.uptime < 95).length,
+                warning_monitors: realMonitors.filter(m => m.uptime >= 95 && m.uptime < 99).length,
+                healthy_monitors: realMonitors.filter(m => m.uptime >= 99).length,
+                total_estimated_downtime: realMonitors.reduce((sum, m) => {
+                    const lostMinutes = 7 * 24 * 60 * (100 - m.uptime) / 100;
+                    return sum + lostMinutes;
+                }, 0)
+            };
+            
+            return analysis;
+        }
+
+        function updateHeartbeats(data) {
+            // Actualizar información de último ping
+            Object.keys(data).forEach(monitorId => {
+                const monitor = realMonitors.find(m => m.id == monitorId);
+                if (monitor && data[monitorId]) {
+                    monitor.lastPing = data[monitorId].ping || 'N/A';
+                    monitor.status = data[monitorId].status === 1 ? 'up' : 'down';
+                }
+            });
+            
+            applyFilters();
+        }
+
+        function updateUptimes(data) {
+            // Actualizar información de uptime
+            Object.keys(data).forEach(key => {
+                const [monitorId, period] = key.split('_');
+                if (period === '24') { // Usar uptime de 24h
+                    const monitor = realMonitors.find(m => m.id == monitorId);
+                    if (monitor) {
+                        monitor.uptime = (data[key] * 100) || 0;
+                    }
+                }
+            });
+            
+            applyFilters();
+            updateRealStats();
+        }
+
+        function refreshData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('mainContent').style.display = 'none';
+            loadRealTimeData();
+        }
+
+        function startAutoRefresh() {
+            autoRefreshInterval = setInterval(() => {
+                if (socket && socket.connected) {
+                    loadRealTimeData();
+                    updateTimestamp();
+                }
+            }, 30000);
+        }
+
+        function showError(message) {
+            document.getElementById('loading').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> ${message}
+                    <button onclick="connectToAPI()" class="btn btn-outline-danger ms-3">
+                        <i class="fas fa-retry"></i> Reintentar
+                    </button>
+                </div>
+            `;
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type: type });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Limpiar al salir
+        window.addEventListener('beforeunload', function() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            if (socket) {
+                socket.disconnect();
+            }
+        });
+    </script>
+</body>
+</html>

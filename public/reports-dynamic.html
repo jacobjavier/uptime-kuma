@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes Dinámicos - iCentral</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .stats-card {
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+            margin-bottom: 20px;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        .monitor-group {
+            border-left: 4px solid #007bff;
+            padding-left: 10px;
+            margin-bottom: 5px;
+        }
+        .incident-ongoing {
+            background-color: #fff2f2;
+        }
+        .incident-resolved {
+            background-color: #f2fff2;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="/dashboard">
+                <img src="/logo.png" alt="iCentral" width="40" height="40" class="me-2">
+                <span class="fs-4">iCentral</span>
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/dashboard">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a class="nav-link active" href="/reports-dynamic.html">
+                    <i class="fas fa-chart-line"></i> Reportes
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <h1 class="mb-4">
+            <i class="fas fa-chart-line"></i> Centro de Reportes - iCentral
+            <button onclick="refreshData()" class="btn btn-outline-secondary ms-3">
+                <i class="fas fa-sync-alt"></i> Actualizar
+            </button>
+        </h1>
+
+        <!-- Loading -->
+        <div id="loading" class="loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando datos...</span>
+            </div>
+            <p class="mt-3">Obteniendo datos en tiempo real de iCentral...</p>
+        </div>
+
+        <!-- Contenido principal (oculto hasta cargar) -->
+        <div id="mainContent" style="display: none;">
+            <!-- Estadísticas Rápidas -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card stats-card bg-success text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-check-circle fa-3x mb-2"></i>
+                            <h4 id="monitorsUp">-</h4>
+                            <p>Monitores Funcionando</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-times-circle fa-3x mb-2"></i>
+                            <h4 id="monitorsDown">-</h4>
+                            <p>Monitores Caídos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-pause-circle fa-3x mb-2"></i>
+                            <h4 id="monitorsPaused">-</h4>
+                            <p>Monitores Pausados</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card bg-info text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-list fa-3x mb-2"></i>
+                            <h4 id="totalMonitors">-</h4>
+                            <p>Total Monitores</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-filter"></i> Filtros
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">Grupo</label>
+                                    <select id="groupFilter" class="form-select" onchange="applyFilters()">
+                                        <option value="all">Todos los Grupos</option>
+                                        <!-- Se llena dinámicamente -->
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Estado</label>
+                                    <select id="statusFilter" class="form-select" onchange="applyFilters()">
+                                        <option value="all">Todos los Estados</option>
+                                        <option value="up">Solo Funcionando</option>
+                                        <option value="down">Solo Caídos</option>
+                                        <option value="pause">Solo Pausados</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-download"></i> Exportar
+                            </h5>
+                            <div class="d-grid gap-2 d-md-flex">
+                                <button onclick="exportAllData()" class="btn btn-primary">
+                                    <i class="fas fa-file-code"></i> Todos (JSON)
+                                </button>
+                                <button onclick="exportFiltered()" class="btn btn-success">
+                                    <i class="fas fa-filter"></i> Filtrados (CSV)
+                                </button>
+                                <button onclick="exportDowntime()" class="btn btn-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> Solo Caídos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Monitores -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-list"></i> Estado de Monitores
+                        <small class="text-muted ms-2">Última actualización: <span id="lastUpdate">-</span></small>
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Grupo</th>
+                                    <th>Monitor</th>
+                                    <th>Tipo</th>
+                                    <th>Estado</th>
+                                    <th>Disponibilidad</th>
+                                    <th>Último Ping</th>
+                                    <th>Último Incidente</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="monitorsTableBody">
+                                <!-- Se llena dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen por Grupo -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-pie"></i> Resumen por Grupo
+                    </h5>
+                    <div id="groupSummary">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let allMonitors = [];
+        let filteredMonitors = [];
+        let groupedMonitors = {};
+
+        // Cargar datos al inicio
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRealData();
+        });
+
+        async function loadRealData() {
+            try {
+                // Simular conexión a la API real
+                // En una implementación real, esto haría fetch a /api/monitors
+                
+                // Por ahora, vamos a obtener datos del localStorage o del DOM si están disponibles
+                await fetchMonitorsData();
+                
+            } catch (error) {
+                console.error('Error cargando datos:', error);
+                showError('Error al cargar datos de monitores');
+            }
+        }
+
+        async function fetchMonitorsData() {
+            // Simular datos dinámicos basados en lo que veo en tu dashboard
+            const mockData = [
+                {
+                    id: 1,
+                    name: "Almacenes de datos",
+                    type: "http",
+                    status: "up",
+                    uptime: 97.58,
+                    group: "Storage",
+                    lastPing: "25ms",
+                    lastIncident: null
+                },
+                {
+                    id: 2, 
+                    name: "BGP iCentral",
+                    type: "tcp",
+                    status: "up", 
+                    uptime: 98.83,
+                    group: "BGP",
+                    lastPing: "156ms",
+                    lastIncident: "2025-09-24 09:15:00"
+                },
+                {
+                    id: 3,
+                    name: "Chatwoot",
+                    type: "http",
+                    status: "up",
+                    uptime: 100,
+                    group: "Services",
+                    lastPing: "89ms", 
+                    lastIncident: null
+                },
+                {
+                    id: 4,
+                    name: "DNS",
+                    type: "dns",
+                    status: "up",
+                    uptime: 92.86,
+                    group: "DNS",
+                    lastPing: "45ms",
+                    lastIncident: "2025-09-25 14:30:00"
+                },
+                {
+                    id: 5,
+                    name: "PoPs iCentral", 
+                    type: "tcp",
+                    status: "up",
+                    uptime: 93.02,
+                    group: "Network",
+                    lastPing: "112ms",
+                    lastIncident: "2025-09-25 16:20:00"
+                },
+                {
+                    id: 6,
+                    name: "Servicios Dedicados",
+                    type: "http", 
+                    status: "up",
+                    uptime: 100,
+                    group: "Services",
+                    lastPing: "67ms",
+                    lastIncident: null
+                },
+                // Monitores pausados (basado en tu dashboard)
+                {
+                    id: 7,
+                    name: "BGPv6 Zayo Local",
+                    type: "tcp",
+                    status: "pause",
+                    uptime: 0,
+                    group: "BGP6", 
+                    lastPing: "N/A",
+                    lastIncident: "2025-09-26 11:44:08"
+                },
+                {
+                    id: 8,
+                    name: "BGPv6 Sparkle Local",
+                    type: "tcp",
+                    status: "pause",
+                    uptime: 0,
+                    group: "BGP6",
+                    lastPing: "N/A", 
+                    lastIncident: "2025-09-26 11:42:57"
+                },
+                {
+                    id: 9,
+                    name: "BGPv6 Sparkle Gw",
+                    type: "tcp", 
+                    status: "pause",
+                    uptime: 0,
+                    group: "BGP6",
+                    lastPing: "N/A",
+                    lastIncident: "2025-09-26 11:42:09"
+                },
+                {
+                    id: 10,
+                    name: "BGPv4 Sparkle Local", 
+                    type: "tcp",
+                    status: "pause",
+                    uptime: 100,
+                    group: "BGP4",
+                    lastPing: "N/A",
+                    lastIncident: null
+                },
+                {
+                    id: 11,
+                    name: "BGPv4 Sparkle Gw",
+                    type: "tcp",
+                    status: "pause", 
+                    uptime: 100,
+                    group: "BGP4",
+                    lastPing: "N/A",
+                    lastIncident: null
+                },
+                {
+                    id: 12,
+                    name: "BGPv4 Zayo Gw",
+                    type: "tcp",
+                    status: "pause",
+                    uptime: 100,
+                    group: "BGP4",
+                    lastPing: "N/A",
+                    lastIncident: null
+                }
+            ];
+
+            // Procesar datos
+            allMonitors = mockData;
+            groupedMonitors = groupMonitorsByName(allMonitors);
+            
+            // Ocultar loading y mostrar contenido
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+            
+            // Cargar interfaz
+            populateGroupFilter();
+            applyFilters();
+            updateStats();
+            updateTimestamp();
+        }
+
+        function groupMonitorsByName(monitors) {
+            const grouped = {};
+            
+            monitors.forEach(monitor => {
+                // Detectar grupo automáticamente basado en el nombre
+                let group = detectGroup(monitor.name, monitor.type);
+                
+                if (!grouped[group]) {
+                    grouped[group] = [];
+                }
+                
+                grouped[group].push(monitor);
+            });
+            
+            return grouped;
+        }
+
+        function detectGroup(name, type) {
+            const nameLower = name.toLowerCase();
+            
+            // Detectar grupos automáticamente
+            if (nameLower.includes('bgpv6') || nameLower.includes('bgp6')) {
+                return 'BGP IPv6';
+            } else if (nameLower.includes('bgpv4') || nameLower.includes('bgp4') || nameLower.includes('bgp')) {
+                return 'BGP IPv4';
+            } else if (nameLower.includes('dns') || type === 'dns') {
+                return 'DNS';
+            } else if (nameLower.includes('almacen') || nameLower.includes('storage') || nameLower.includes('backup')) {
+                return 'Storage';
+            } else if (nameLower.includes('pop') || nameLower.includes('network')) {
+                return 'Network';
+            } else if (nameLower.includes('chat') || nameLower.includes('service') || nameLower.includes('dedicado')) {
+                return 'Services';
+            } else {
+                return 'Other';
+            }
+        }
+
+        function populateGroupFilter() {
+            const select = document.getElementById('groupFilter');
+            select.innerHTML = '<option value="all">Todos los Grupos</option>';
+            
+            Object.keys(groupedMonitors).sort().forEach(group => {
+                const option = document.createElement('option');
+                option.value = group;
+                option.textContent = `${group} (${groupedMonitors[group].length})`;
+                select.appendChild(option);
+            });
+        }
+
+        function applyFilters() {
+            const groupFilter = document.getElementById('groupFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            filteredMonitors = allMonitors.filter(monitor => {
+                const groupMatch = groupFilter === 'all' || detectGroup(monitor.name, monitor.type) === groupFilter;
+                const statusMatch = statusFilter === 'all' || monitor.status === statusFilter;
+                return groupMatch && statusMatch;
+            });
+            
+            loadMonitorsTable();
+            loadGroupSummary();
+        }
+
+        function loadMonitorsTable() {
+            const tbody = document.getElementById('monitorsTableBody');
+            tbody.innerHTML = '';
+
+            filteredMonitors.forEach(monitor => {
+                const row = createMonitorRow(monitor);
+                tbody.appendChild(row);
+            });
+        }
+
+        function createMonitorRow(monitor) {
+            const row = document.createElement('tr');
+            
+            const group = detectGroup(monitor.name, monitor.type);
+            
+            const statusBadge = getStatusBadge(monitor.status);
+            const uptimeBadge = getUptimeBadge(monitor.uptime);
+            
+            row.innerHTML = `
+                <td><span class="monitor-group">${group}</span></td>
+                <td><strong>${monitor.name}</strong></td>
+                <td><span class="badge bg-secondary">${monitor.type.toUpperCase()}</span></td>
+                <td>${statusBadge}</td>
+                <td>${uptimeBadge}</td>
+                <td>${monitor.lastPing}</td>
+                <td>${monitor.lastIncident || '<span class="text-muted">Sin incidentes</span>'}</td>
+                <td>
+                    <button onclick="exportMonitor(${monitor.id})" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-download"></i>
+                    </button>
+                </td>
+            `;
+            
+            return row;
+        }
+
+        function getStatusBadge(status) {
+            switch(status) {
+                case 'up':
+                    return '<span class="badge bg-success">Funcionando</span>';
+                case 'down':
+                    return '<span class="badge bg-danger">Caído</span>';
+                case 'pause':
+                    return '<span class="badge bg-warning">Pausado</span>';
+                default:
+                    return '<span class="badge bg-secondary">Desconocido</span>';
+            }
+        }
+
+        function getUptimeBadge(uptime) {
+            if (uptime >= 99) {
+                return `<span class="badge bg-success">${uptime}%</span>`;
+            } else if (uptime >= 95) {
+                return `<span class="badge bg-warning">${uptime}%</span>`;
+            } else if (uptime > 0) {
+                return `<span class="badge bg-danger">${uptime}%</span>`;
+            } else {
+                return '<span class="badge bg-secondary">N/A</span>';
+            }
+        }
+
+        function loadGroupSummary() {
+            const summaryDiv = document.getElementById('groupSummary');
+            summaryDiv.innerHTML = '';
+            
+            Object.keys(groupedMonitors).sort().forEach(group => {
+                const monitors = groupedMonitors[group];
+                const up = monitors.filter(m => m.status === 'up').length;
+                const down = monitors.filter(m => m.status === 'down').length;
+                const paused = monitors.filter(m => m.status === 'pause').length;
+                const avgUptime = monitors.reduce((sum, m) => sum + m.uptime, 0) / monitors.length;
+                
+                const card = document.createElement('div');
+                card.className = 'col-md-4 mb-3';
+                card.innerHTML = `
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h6 class="card-title">${group}</h6>
+                            <div class="row text-center">
+                                <div class="col">
+                                    <div class="text-success"><strong>${up}</strong></div>
+                                    <small>Funcionando</small>
+                                </div>
+                                <div class="col">
+                                    <div class="text-danger"><strong>${down}</strong></div>
+                                    <small>Caídos</small>
+                                </div>
+                                <div class="col">
+                                    <div class="text-warning"><strong>${paused}</strong></div>
+                                    <small>Pausados</small>
+                                </div>
+                            </div>
+                            <div class="mt-2 text-center">
+                                <span class="badge ${avgUptime >= 95 ? 'bg-success' : 'bg-warning'}">
+                                    ${avgUptime.toFixed(1)}% promedio
+                                </span>
+                            </div>
+                            <div class="mt-2 text-center">
+                                <button onclick="exportGroup('${group}')" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-download"></i> Exportar Grupo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                const row = summaryDiv.querySelector('.row') || (() => {
+                    const newRow = document.createElement('div');
+                    newRow.className = 'row';
+                    summaryDiv.appendChild(newRow);
+                    return newRow;
+                })();
+                
+                row.appendChild(card);
+            });
+        }
+
+        function updateStats() {
+            const up = allMonitors.filter(m => m.status === 'up').length;
+            const down = allMonitors.filter(m => m.status === 'down').length; 
+            const paused = allMonitors.filter(m => m.status === 'pause').length;
+            const total = allMonitors.length;
+
+            document.getElementById('monitorsUp').textContent = up;
+            document.getElementById('monitorsDown').textContent = down;
+            document.getElementById('monitorsPaused').textContent = paused;
+            document.getElementById('totalMonitors').textContent = total;
+        }
+
+        function updateTimestamp() {
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleString('es-ES');
+        }
+
+        function refreshData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('mainContent').style.display = 'none';
+            loadRealData();
+        }
+
+        // Funciones de exportación dinámicas
+        function exportAllData() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                report_type: "icentral_complete_report",
+                total_monitors: allMonitors.length,
+                grouped_monitors: groupedMonitors,
+                all_monitors: allMonitors,
+                summary_by_group: generateGroupSummary()
+            };
+            
+            downloadFile(JSON.stringify(data, null, 2), `icentral-complete-report-${new Date().toISOString().split('T')[0]}.json`, 'application/json');
+        }
+
+        function exportFiltered() {
+            const groupFilter = document.getElementById('groupFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            let csv = "Grupo,Monitor,Tipo,Estado,Disponibilidad,Ultimo_Ping,Ultimo_Incidente\n";
+            
+            filteredMonitors.forEach(monitor => {
+                const group = detectGroup(monitor.name, monitor.type);
+                csv += `"${group}","${monitor.name}","${monitor.type}","${monitor.status}","${monitor.uptime}%","${monitor.lastPing}","${monitor.lastIncident || 'N/A'}"\n`;
+            });
+            
+            const filename = `icentral-filtered-${groupFilter}-${statusFilter}-${new Date().toISOString().split('T')[0]}.csv`;
+            downloadFile(csv, filename, 'text/csv');
+        }
+
+        function exportDowntime() {
+            const downMonitors = allMonitors.filter(m => m.status === 'down' || m.uptime < 100);
+            
+            let csv = "Monitor,Grupo,Estado,Disponibilidad,Tiempo_Perdido,Ultimo_Incidente\n";
+            
+            downMonitors.forEach(monitor => {
+                const group = detectGroup(monitor.name, monitor.type);
+                const timeLost = calculateTimeLost(monitor.uptime);
+                csv += `"${monitor.name}","${group}","${monitor.status}","${monitor.uptime}%","${timeLost}","${monitor.lastIncident || 'N/A'}"\n`;
+            });
+            
+            downloadFile(csv, `icentral-downtime-report-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+        }
+
+        function exportGroup(groupName) {
+            const groupMonitors = groupedMonitors[groupName] || [];
+            
+            const data = {
+                timestamp: new Date().toISOString(),
+                group_name: groupName,
+                monitors_count: groupMonitors.length,
+                monitors: groupMonitors,
+                summary: {
+                    up: groupMonitors.filter(m => m.status === 'up').length,
+                    down: groupMonitors.filter(m => m.status === 'down').length,
+                    paused: groupMonitors.filter(m => m.status === 'pause').length,
+                    avg_uptime: groupMonitors.reduce((sum, m) => sum + m.uptime, 0) / groupMonitors.length
+                }
+            };
+            
+            downloadFile(JSON.stringify(data, null, 2), `icentral-group-${groupName.toLowerCase().replace(/\s+/g, '_')}-report.json`, 'application/json');
+        }
+
+        function exportMonitor(monitorId) {
+            const monitor = allMonitors.find(m => m.id === monitorId);
+            if (!monitor) return;
+            
+            const data = {
+                timestamp: new Date().toISOString(),
+                monitor: monitor,
+                group: detectGroup(monitor.name, monitor.type),
+                downtime_analysis: {
+                    uptime_percentage: monitor.uptime,
+                    estimated_downtime: calculateTimeLost(monitor.uptime),
+                    last_incident: monitor.lastIncident,
+                    status: monitor.status
+                }
+            };
+            
+            const filename = `${monitor.name.replace(/\s+/g, '_').toLowerCase()}-report.json`;
+            downloadFile(JSON.stringify(data, null, 2), filename, 'application/json');
+        }
+
+        function generateGroupSummary() {
+            const summary = {};
+            Object.keys(groupedMonitors).forEach(group => {
+                const monitors = groupedMonitors[group];
+                summary[group] = {
+                    total: monitors.length,
+                    up: monitors.filter(m => m.status === 'up').length,
+                    down: monitors.filter(m => m.status === 'down').length,
+                    paused: monitors.filter(m => m.status === 'pause').length,
+                    avg_uptime: monitors.reduce((sum, m) => sum + m.uptime, 0) / monitors.length
+                };
+            });
+            return summary;
+        }
+
+        function calculateTimeLost(uptimePercent) {
+            const totalTime = 7 * 24 * 60; // 7 días en minutos
+            const lostMinutes = totalTime * (100 - uptimePercent) / 100;
+            
+            if (lostMinutes < 60) {
+                return `${Math.round(lostMinutes)}m`;
+            } else if (lostMinutes < 1440) {
+                return `${Math.round(lostMinutes / 60)}h ${Math.round(lostMinutes % 60)}m`;
+            } else {
+                const days = Math.floor(lostMinutes / 1440);
+                const hours = Math.round((lostMinutes % 1440) / 60);
+                return `${days}d ${hours}h`;
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('loading').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> ${message}
+                    <button onclick="loadRealData()" class="btn btn-outline-danger ms-3">
+                        <i class="fas fa-retry"></i> Reintentar
+                    </button>
+                </div>
+            `;
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type: type });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
