@@ -25,7 +25,8 @@ RUN npm install --legacy-peer-deps
 # Copiar código fuente
 COPY . .
 
-# Construir la aplicación
+# Limpiar caché y construir la aplicación
+RUN rm -rf dist/ node_modules/.vite node_modules/.cache || true
 RUN npm run build
 
 # Crear directorio de datos
