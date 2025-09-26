@@ -38,6 +38,7 @@ EXPOSE 3001
 ENV NODE_ENV=production
 ENV UPTIME_KUMA_HOST=0.0.0.0
 ENV DATA_DIR=/app/data
+ENV UPTIME_KUMA_DB_TYPE=sqlite
 
 # Health check - Railway usa su propio health check, removemos este
 # HEALTHCHECK --interval=60s --timeout=30s --start-period=180s --retries=5 \

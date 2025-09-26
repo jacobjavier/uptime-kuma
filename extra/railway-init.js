@@ -22,13 +22,14 @@ function initializeRailwayDatabase() {
         // Configurar base de datos según variables de entorno
         let dbConfig;
         
-        if (process.env.DATABASE_URL) {
+        // Usar SQLite por defecto para evitar problemas de migración con PostgreSQL
+        if (process.env.UPTIME_KUMA_DB_TYPE === "postgres" && process.env.DATABASE_URL) {
             log.info("railway-init", "✅ DATABASE_URL detectada - Configurando PostgreSQL");
             dbConfig = {
                 type: "postgres"
             };
         } else {
-            log.info("railway-init", "⚠️ DATABASE_URL no encontrada - Usando SQLite");
+            log.info("railway-init", "✅ Usando SQLite (más estable para Railway)");
             dbConfig = {
                 type: "sqlite"
             };
