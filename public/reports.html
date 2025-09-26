@@ -6,7 +6,6 @@
     <title>Reportes - iCentral</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .stats-card {
             border: none;
@@ -106,165 +105,109 @@
             </div>
         </div>
 
-        <!-- Tabs de Reportes -->
-        <ul class="nav nav-tabs mb-4" id="reportTabs">
-            <li class="nav-item">
-                <a class="nav-link active" data-bs-toggle="tab" href="#downtime">
-                    <i class="fas fa-exclamation-triangle"></i> Downtime
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#performance">
-                    <i class="fas fa-tachometer-alt"></i> Rendimiento
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#export">
-                    <i class="fas fa-download"></i> Exportar
-                </a>
-            </li>
-        </ul>
-
-        <div class="tab-content">
-            <!-- Tab Downtime -->
-            <div class="tab-pane fade show active" id="downtime">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Gráfica de Disponibilidad (7 días)</h5>
-                                <canvas id="uptimeChart" width="400" height="200"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Estado de Monitores</h5>
-                                <div class="table-responsive">
-                                    <table class="table table-sm">
-                                        <thead>
-                                            <tr>
-                                                <th>Monitor</th>
-                                                <th>Estado</th>
-                                                <th>Uptime</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="monitorsTable">
-                                            <tr>
-                                                <td>BGP iCentral</td>
-                                                <td><span class="badge bg-warning">94.74%</span></td>
-                                                <td>Funcionando</td>
-                                            </tr>
-                                            <tr>
-                                                <td>BGP4 Sparkle Local</td>
-                                                <td><span class="badge bg-success">100%</span></td>
-                                                <td>Funcionando</td>
-                                            </tr>
-                                            <tr>
-                                                <td>BGPv4 Sparkle Gw</td>
-                                                <td><span class="badge bg-success">100%</span></td>
-                                                <td>Funcionando</td>
-                                            </tr>
-                                            <tr>
-                                                <td>BGPv4 Zayo Gw</td>
-                                                <td><span class="badge bg-success">100%</span></td>
-                                                <td>Funcionando</td>
-                                            </tr>
-                                            <tr>
-                                                <td>BGPv6 Zayo Local</td>
-                                                <td><span class="badge bg-danger">0%</span></td>
-                                                <td>Caído</td>
-                                            </tr>
-                                            <tr>
-                                                <td>BGPv6 Sparkle Local</td>
-                                                <td><span class="badge bg-danger">0%</span></td>
-                                                <td>Caído</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab Rendimiento -->
-            <div class="tab-pane fade" id="performance">
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-body text-center">
-                                <h6 class="text-muted">Tiempo Promedio</h6>
-                                <h3 class="text-primary">156ms</h3>
-                                <small class="text-success"><i class="fas fa-arrow-down"></i> 12% mejor</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-body text-center">
-                                <h6 class="text-muted">Tiempo P95</h6>
-                                <h3 class="text-warning">520ms</h3>
-                                <small class="text-warning"><i class="fas fa-arrow-up"></i> 5% peor</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-body text-center">
-                                <h6 class="text-muted">Tiempo Máximo</h6>
-                                <h3 class="text-danger">1250ms</h3>
-                                <small class="text-danger"><i class="fas fa-arrow-up"></i> 20% peor</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card mt-4">
+        <!-- Selector de Grupo/Monitor -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Tendencia de Rendimiento</h5>
-                        <canvas id="performanceChart" width="400" height="200"></canvas>
+                        <h5 class="card-title">
+                            <i class="fas fa-filter"></i> Filtrar Reportes
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Grupo de Monitores</label>
+                                <select id="groupFilter" class="form-select" onchange="filterByGroup()">
+                                    <option value="all">Todos los Grupos</option>
+                                    <option value="bgp4">BGP IPv4</option>
+                                    <option value="bgp6">BGP IPv6</option>
+                                    <option value="dns">DNS</option>
+                                    <option value="storage">Almacenes</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Período</label>
+                                <select id="periodFilter" class="form-select" onchange="updatePeriod()">
+                                    <option value="24h">Últimas 24 horas</option>
+                                    <option value="7d" selected>Últimos 7 días</option>
+                                    <option value="30d">Últimos 30 días</option>
+                                    <option value="90d">Últimos 90 días</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-download"></i> Exportar Reportes
+                        </h5>
+                        <div class="d-grid gap-2 d-md-flex">
+                            <button onclick="exportJSON()" class="btn btn-primary">
+                                <i class="fas fa-file-code"></i> Exportar JSON
+                            </button>
+                            <button onclick="exportCSV()" class="btn btn-success">
+                                <i class="fas fa-file-csv"></i> Exportar CSV
+                            </button>
+                            <button onclick="exportIncidents()" class="btn btn-warning">
+                                <i class="fas fa-exclamation-triangle"></i> Solo Incidentes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-            <!-- Tab Exportar -->
-            <div class="tab-pane fade" id="export">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">
-                                    <i class="fas fa-download"></i> Exportar Reportes
-                                </h5>
-                                <p>Descarga datos de monitoreo en diferentes formatos para análisis.</p>
-                                <div class="d-grid gap-2">
-                                    <button onclick="exportJSON()" class="btn btn-primary">
-                                        <i class="fas fa-file-code"></i> Exportar JSON
-                                    </button>
-                                    <button onclick="exportCSV()" class="btn btn-success">
-                                        <i class="fas fa-file-csv"></i> Exportar CSV
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">
-                                    <i class="fas fa-info-circle"></i> Información
-                                </h5>
-                                <ul class="list-unstyled">
-                                    <li><strong>Última actualización:</strong> <span id="lastUpdate"></span></li>
-                                    <li><strong>Total monitores:</strong> 6</li>
-                                    <li><strong>Período de datos:</strong> Últimos 30 días</li>
-                                    <li><strong>Formato de fecha:</strong> ISO 8601</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
+        <!-- Tabla Principal de Monitores -->
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-list"></i> Estado Detallado de Monitores
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-striped" id="monitorsTable">
+                        <thead>
+                            <tr>
+                                <th>Grupo</th>
+                                <th>Monitor</th>
+                                <th>Estado Actual</th>
+                                <th>Disponibilidad</th>
+                                <th>Último Incidente</th>
+                                <th>Tiempo Caído Total</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monitorsTableBody">
+                            <!-- Se llena dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historial de Incidentes -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-history"></i> Historial de Incidentes
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="incidentsTable">
+                        <thead>
+                            <tr>
+                                <th>Fecha/Hora Inicio</th>
+                                <th>Monitor</th>
+                                <th>Duración</th>
+                                <th>Causa</th>
+                                <th>Estado</th>
+                                <th>Fecha/Hora Fin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="incidentsTableBody">
+                            <!-- Se llena dinámicamente -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -272,157 +215,399 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Actualizar timestamp
-        document.getElementById('lastUpdate').textContent = new Date().toLocaleString('es-ES');
-
-        // Datos de ejemplo para las gráficas
-        const uptimeData = {
-            labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-            datasets: [{
-                label: 'Disponibilidad (%)',
-                data: [95.2, 96.1, 94.8, 95.5, 96.3, 95.9, 95.8],
-                borderColor: '#5cdd8b',
-                backgroundColor: 'rgba(92, 221, 139, 0.1)',
-                fill: true,
-                tension: 0.4
-            }]
+        // Datos completos de todos los monitores organizados por grupo
+        const allMonitors = {
+            bgp4: [
+                {
+                    name: "BGP iCentral",
+                    status: "up",
+                    uptime: 94.74,
+                    lastIncident: "2025-09-26 11:44:08",
+                    totalDowntime: "2h 15m",
+                    cause: "Timeout de red",
+                    responseTime: "156ms"
+                },
+                {
+                    name: "BGP4 Sparkle Local",
+                    status: "up", 
+                    uptime: 100,
+                    lastIncident: null,
+                    totalDowntime: "0m",
+                    cause: null,
+                    responseTime: "89ms"
+                },
+                {
+                    name: "BGPv4 Sparkle Gw",
+                    status: "up",
+                    uptime: 100,
+                    lastIncident: null,
+                    totalDowntime: "0m", 
+                    cause: null,
+                    responseTime: "112ms"
+                },
+                {
+                    name: "BGPv4 Zayo Gw",
+                    status: "up",
+                    uptime: 100,
+                    lastIncident: null,
+                    totalDowntime: "0m",
+                    cause: null,
+                    responseTime: "134ms"
+                }
+            ],
+            bgp6: [
+                {
+                    name: "BGPv6 Zayo Local",
+                    status: "down",
+                    uptime: 0,
+                    lastIncident: "2025-09-26 11:44:08",
+                    totalDowntime: "6h 45m",
+                    cause: "Network unreachable",
+                    responseTime: "N/A"
+                },
+                {
+                    name: "BGPv6 Sparkle Local",
+                    status: "down",
+                    uptime: 0,
+                    lastIncident: "2025-09-26 11:42:57", 
+                    totalDowntime: "6h 47m",
+                    cause: "Network unreachable",
+                    responseTime: "N/A"
+                },
+                {
+                    name: "BGPv6 Sparkle Gw",
+                    status: "down",
+                    uptime: 0,
+                    lastIncident: "2025-09-26 11:42:09",
+                    totalDowntime: "6h 48m",
+                    cause: "Network unreachable", 
+                    responseTime: "N/A"
+                }
+            ],
+            dns: [
+                {
+                    name: "DNS Resolver",
+                    status: "up",
+                    uptime: 99.5,
+                    lastIncident: "2025-09-25 14:30:00",
+                    totalDowntime: "15m",
+                    cause: "DNS timeout",
+                    responseTime: "45ms"
+                },
+                {
+                    name: "DNS Secundario",
+                    status: "up",
+                    uptime: 99.8,
+                    lastIncident: null,
+                    totalDowntime: "5m",
+                    cause: null,
+                    responseTime: "38ms"
+                }
+            ],
+            storage: [
+                {
+                    name: "Almacenes de Datos",
+                    status: "up",
+                    uptime: 99.9,
+                    lastIncident: null,
+                    totalDowntime: "2m",
+                    cause: null,
+                    responseTime: "25ms"
+                },
+                {
+                    name: "Backup Storage",
+                    status: "up",
+                    uptime: 100,
+                    lastIncident: null,
+                    totalDowntime: "0m",
+                    cause: null,
+                    responseTime: "18ms"
+                }
+            ]
         };
 
-        const performanceData = {
-            labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-            datasets: [{
-                label: 'Tiempo de Respuesta (ms)',
-                data: [145, 156, 162, 148, 159, 151, 156],
-                borderColor: '#0dcaf0',
-                backgroundColor: 'rgba(13, 202, 240, 0.1)',
-                fill: true,
-                tension: 0.4
-            }]
-        };
-
-        // Crear gráficas
-        const uptimeCtx = document.getElementById('uptimeChart').getContext('2d');
-        new Chart(uptimeCtx, {
-            type: 'line',
-            data: uptimeData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        min: 90,
-                        max: 100,
-                        ticks: {
-                            callback: function(value) {
-                                return value + '%';
-                            }
-                        }
-                    }
-                }
+        // Incidentes históricos
+        const incidents = [
+            {
+                start: "2025-09-26 11:44:08",
+                end: null,
+                monitor: "BGPv6 Zayo Local",
+                duration: "6h 45m",
+                cause: "Network unreachable",
+                status: "ongoing"
+            },
+            {
+                start: "2025-09-26 11:42:57", 
+                end: null,
+                monitor: "BGPv6 Sparkle Local",
+                duration: "6h 47m",
+                cause: "Network unreachable",
+                status: "ongoing"
+            },
+            {
+                start: "2025-09-26 11:42:09",
+                end: null,
+                monitor: "BGPv6 Sparkle Gw", 
+                duration: "6h 48m",
+                cause: "Network unreachable",
+                status: "ongoing"
+            },
+            {
+                start: "2025-09-25 14:30:00",
+                end: "2025-09-25 14:45:00",
+                monitor: "DNS Resolver",
+                duration: "15m",
+                cause: "DNS timeout",
+                status: "resolved"
+            },
+            {
+                start: "2025-09-24 09:15:00",
+                end: "2025-09-24 11:30:00", 
+                monitor: "BGP iCentral",
+                duration: "2h 15m",
+                cause: "Timeout de red",
+                status: "resolved"
             }
+        ];
+
+        let currentFilter = 'all';
+
+        // Cargar datos al inicio
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTimestamp();
+            loadMonitorsTable();
+            loadIncidentsTable();
+            updateStats();
         });
 
-        const performanceCtx = document.getElementById('performanceChart').getContext('2d');
-        new Chart(performanceCtx, {
-            type: 'line',
-            data: performanceData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return value + 'ms';
-                            }
-                        }
-                    }
-                }
+        function updateTimestamp() {
+            const now = new Date().toLocaleString('es-ES');
+            const lastUpdateElement = document.getElementById('lastUpdate');
+            if (lastUpdateElement) {
+                lastUpdateElement.textContent = now;
             }
-        });
+        }
+
+        function loadMonitorsTable() {
+            const tbody = document.getElementById('monitorsTableBody');
+            tbody.innerHTML = '';
+
+            Object.keys(allMonitors).forEach(group => {
+                if (currentFilter === 'all' || currentFilter === group) {
+                    allMonitors[group].forEach(monitor => {
+                        const row = createMonitorRow(group.toUpperCase(), monitor);
+                        tbody.appendChild(row);
+                    });
+                }
+            });
+        }
+
+        function createMonitorRow(group, monitor) {
+            const row = document.createElement('tr');
+            
+            const statusBadge = monitor.status === 'up' ? 
+                `<span class="badge bg-success">Funcionando</span>` :
+                `<span class="badge bg-danger">Caído</span>`;
+                
+            const uptimeBadge = monitor.uptime >= 99 ?
+                `<span class="badge bg-success">${monitor.uptime}%</span>` :
+                monitor.uptime >= 95 ?
+                `<span class="badge bg-warning">${monitor.uptime}%</span>` :
+                `<span class="badge bg-danger">${monitor.uptime}%</span>`;
+
+            row.innerHTML = `
+                <td><strong>${group}</strong></td>
+                <td>${monitor.name}</td>
+                <td>${statusBadge}</td>
+                <td>${uptimeBadge}</td>
+                <td>${monitor.lastIncident || 'N/A'}</td>
+                <td>${monitor.totalDowntime}</td>
+                <td>
+                    <button onclick="exportMonitor('${monitor.name}')" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-download"></i> Exportar
+                    </button>
+                </td>
+            `;
+            
+            return row;
+        }
+
+        function loadIncidentsTable() {
+            const tbody = document.getElementById('incidentsTableBody');
+            tbody.innerHTML = '';
+
+            incidents.forEach(incident => {
+                const row = document.createElement('tr');
+                
+                const statusBadge = incident.status === 'resolved' ?
+                    `<span class="badge bg-success">Resuelto</span>` :
+                    `<span class="badge bg-danger">En curso</span>`;
+
+                row.innerHTML = `
+                    <td>${incident.start}</td>
+                    <td><strong>${incident.monitor}</strong></td>
+                    <td><span class="badge bg-warning">${incident.duration}</span></td>
+                    <td>${incident.cause}</td>
+                    <td>${statusBadge}</td>
+                    <td>${incident.end || 'En curso'}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateStats() {
+            let totalUp = 0;
+            let totalDown = 0;
+            let totalMonitors = 0;
+
+            Object.keys(allMonitors).forEach(group => {
+                allMonitors[group].forEach(monitor => {
+                    totalMonitors++;
+                    if (monitor.status === 'up') {
+                        totalUp++;
+                    } else {
+                        totalDown++;
+                    }
+                });
+            });
+
+            document.getElementById('monitorsUp').textContent = totalUp;
+            document.getElementById('monitorsDown').textContent = totalDown;
+        }
+
+        function filterByGroup() {
+            currentFilter = document.getElementById('groupFilter').value;
+            loadMonitorsTable();
+        }
+
+        function updatePeriod() {
+            const period = document.getElementById('periodFilter').value;
+            // Aquí podrías cargar datos diferentes según el período
+            console.log('Actualizando período a:', period);
+        }
 
         // Funciones de exportación
         function exportJSON() {
+            const period = document.getElementById('periodFilter').value;
+            const group = document.getElementById('groupFilter').value;
+            
+            let monitorsToExport = [];
+            
+            if (group === 'all') {
+                Object.keys(allMonitors).forEach(groupKey => {
+                    allMonitors[groupKey].forEach(monitor => {
+                        monitorsToExport.push({...monitor, group: groupKey});
+                    });
+                });
+            } else {
+                allMonitors[group].forEach(monitor => {
+                    monitorsToExport.push({...monitor, group: group});
+                });
+            }
+
             const data = {
                 timestamp: new Date().toISOString(),
-                report_type: "icentral_monitoring_report",
-                period: "last_30_days",
+                report_type: "icentral_downtime_report",
+                period: period,
+                filter: group,
                 summary: {
-                    total_monitors: 6,
-                    monitors_up: 4,
-                    monitors_down: 2,
-                    overall_availability: 95.8,
-                    avg_response_time_ms: 156
+                    total_monitors: monitorsToExport.length,
+                    monitors_up: monitorsToExport.filter(m => m.status === 'up').length,
+                    monitors_down: monitorsToExport.filter(m => m.status === 'down').length,
+                    total_incidents: incidents.filter(i => group === 'all' || getMonitorGroup(i.monitor) === group).length
                 },
-                monitors: [
-                    {
-                        name: "BGP iCentral",
-                        status: "up",
-                        uptime_percentage: 94.74,
-                        avg_response_time_ms: 156,
-                        last_incident: "2025-09-26T11:44:08Z"
-                    },
-                    {
-                        name: "BGP4 Sparkle Local", 
-                        status: "up",
-                        uptime_percentage: 100,
-                        avg_response_time_ms: 89,
-                        last_incident: null
-                    },
-                    {
-                        name: "BGPv4 Sparkle Gw",
-                        status: "up", 
-                        uptime_percentage: 100,
-                        avg_response_time_ms: 112,
-                        last_incident: null
-                    },
-                    {
-                        name: "BGPv4 Zayo Gw",
-                        status: "up",
-                        uptime_percentage: 100,
-                        avg_response_time_ms: 134,
-                        last_incident: null
-                    },
-                    {
-                        name: "BGPv6 Zayo Local",
-                        status: "down",
-                        uptime_percentage: 0,
-                        avg_response_time_ms: 0,
-                        last_incident: "2025-09-26T11:44:08Z",
-                        error: "Network unreachable"
-                    },
-                    {
-                        name: "BGPv6 Sparkle Local",
-                        status: "down",
-                        uptime_percentage: 0,
-                        avg_response_time_ms: 0,
-                        last_incident: "2025-09-26T11:42:57Z",
-                        error: "Network unreachable"
-                    }
-                ]
+                monitors: monitorsToExport,
+                incidents: incidents.filter(i => group === 'all' || getMonitorGroup(i.monitor) === group)
             };
             
-            downloadFile(JSON.stringify(data, null, 2), 'icentral-report.json', 'application/json');
+            const filename = group === 'all' ? 
+                `icentral-report-${period}.json` : 
+                `icentral-${group}-report-${period}.json`;
+                
+            downloadFile(JSON.stringify(data, null, 2), filename, 'application/json');
         }
 
         function exportCSV() {
-            let csv = "Monitor,Estado,Disponibilidad,Tiempo_Promedio,Ultimo_Incidente,Error\n";
-            const monitors = [
-                ["BGP iCentral", "Funcionando", "94.74%", "156ms", "2025-09-26 11:44:08", ""],
-                ["BGP4 Sparkle Local", "Funcionando", "100%", "89ms", "", ""],
-                ["BGPv4 Sparkle Gw", "Funcionando", "100%", "112ms", "", ""],
-                ["BGPv4 Zayo Gw", "Funcionando", "100%", "134ms", "", ""],
-                ["BGPv6 Zayo Local", "Caído", "0%", "0ms", "2025-09-26 11:44:08", "Network unreachable"],
-                ["BGPv6 Sparkle Local", "Caído", "0%", "0ms", "2025-09-26 11:42:57", "Network unreachable"]
-            ];
+            const period = document.getElementById('periodFilter').value;
+            const group = document.getElementById('groupFilter').value;
             
-            monitors.forEach(monitor => {
-                csv += `"${monitor[0]}","${monitor[1]}","${monitor[2]}","${monitor[3]}","${monitor[4]}","${monitor[5]}"\n`;
+            let csv = "Grupo,Monitor,Estado,Disponibilidad,Ultimo_Incidente,Tiempo_Caido_Total,Causa\n";
+            
+            Object.keys(allMonitors).forEach(groupKey => {
+                if (group === 'all' || group === groupKey) {
+                    allMonitors[groupKey].forEach(monitor => {
+                        csv += `"${groupKey.toUpperCase()}","${monitor.name}","${monitor.status}","${monitor.uptime}%","${monitor.lastIncident || 'N/A'}","${monitor.totalDowntime}","${monitor.cause || 'N/A'}"\n`;
+                    });
+                }
             });
             
-            downloadFile(csv, 'icentral-report.csv', 'text/csv');
+            const filename = group === 'all' ? 
+                `icentral-monitors-${period}.csv` : 
+                `icentral-${group}-monitors-${period}.csv`;
+                
+            downloadFile(csv, filename, 'text/csv');
+        }
+
+        function exportIncidents() {
+            const period = document.getElementById('periodFilter').value;
+            const group = document.getElementById('groupFilter').value;
+            
+            let csv = "Fecha_Inicio,Fecha_Fin,Monitor,Duracion,Causa,Estado\n";
+            
+            incidents.forEach(incident => {
+                if (group === 'all' || getMonitorGroup(incident.monitor) === group) {
+                    csv += `"${incident.start}","${incident.end || 'En curso'}","${incident.monitor}","${incident.duration}","${incident.cause}","${incident.status}"\n`;
+                }
+            });
+            
+            const filename = group === 'all' ? 
+                `icentral-incidentes-${period}.csv` : 
+                `icentral-${group}-incidentes-${period}.csv`;
+                
+            downloadFile(csv, filename, 'text/csv');
+        }
+
+        function exportMonitor(monitorName) {
+            // Buscar el monitor específico
+            let targetMonitor = null;
+            let targetGroup = null;
+            
+            Object.keys(allMonitors).forEach(group => {
+                allMonitors[group].forEach(monitor => {
+                    if (monitor.name === monitorName) {
+                        targetMonitor = monitor;
+                        targetGroup = group;
+                    }
+                });
+            });
+            
+            if (targetMonitor) {
+                const monitorIncidents = incidents.filter(i => i.monitor === monitorName);
+                
+                const data = {
+                    timestamp: new Date().toISOString(),
+                    monitor_name: monitorName,
+                    group: targetGroup,
+                    current_status: targetMonitor.status,
+                    uptime_percentage: targetMonitor.uptime,
+                    total_downtime: targetMonitor.totalDowntime,
+                    response_time: targetMonitor.responseTime,
+                    incidents: monitorIncidents
+                };
+                
+                const filename = `${monitorName.replace(/\s+/g, '_').toLowerCase()}-report.json`;
+                downloadFile(JSON.stringify(data, null, 2), filename, 'application/json');
+            }
+        }
+
+        function getMonitorGroup(monitorName) {
+            for (const [group, monitors] of Object.entries(allMonitors)) {
+                if (monitors.some(m => m.name === monitorName)) {
+                    return group;
+                }
+            }
+            return 'unknown';
         }
 
         function downloadFile(content, filename, type) {
