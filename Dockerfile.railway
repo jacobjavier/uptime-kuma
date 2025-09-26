@@ -1,0 +1,47 @@
+# Dockerfile optimizado para Railway
+FROM node:18-alpine
+
+# Instalar dependencias del sistema
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    git \
+    postgresql-client \
+    tzdata
+
+# Configurar zona horaria
+ENV TZ=America/New_York
+
+# Crear directorio de trabajo
+WORKDIR /app
+
+# Copiar archivos de dependencias
+COPY package*.json ./
+
+# Instalar dependencias
+RUN npm install --legacy-peer-deps
+
+# Copiar código fuente
+COPY . .
+
+# Construir la aplicación
+RUN npm run build
+
+# Crear directorio de datos
+RUN mkdir -p /app/data
+
+# Exponer puerto
+EXPOSE 3001
+
+# Variables de entorno por defecto
+ENV NODE_ENV=production
+ENV UPTIME_KUMA_HOST=0.0.0.0
+ENV DATA_DIR=/app/data
+
+# Health check
+HEALTHCHECK --interval=60s --timeout=30s --start-period=180s --retries=5 \
+    CMD node extra/healthcheck.js || exit 1
+
+# Comando de inicio
+CMD ["node", "server/server.js"]
