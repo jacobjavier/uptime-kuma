@@ -39,9 +39,9 @@ ENV NODE_ENV=production
 ENV UPTIME_KUMA_HOST=0.0.0.0
 ENV DATA_DIR=/app/data
 
-# Health check
-HEALTHCHECK --interval=60s --timeout=30s --start-period=180s --retries=5 \
-    CMD node extra/healthcheck.js || exit 1
+# Health check - Railway usa su propio health check, removemos este
+# HEALTHCHECK --interval=60s --timeout=30s --start-period=180s --retries=5 \
+#     CMD node extra/healthcheck.js || exit 1
 
-# Comando de inicio
-CMD ["node", "server/server.js"]
+# Comando de inicio con inicialización inline
+CMD ["sh", "-c", "echo '🚂 Iniciando iCentral...' && mkdir -p $DATA_DIR && node server/server.js"]
